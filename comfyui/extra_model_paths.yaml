@@ -1,48 +1,6 @@
 #config for mounted model folders
-sd_1_5:
-    base_path: /comfyui-container/machine_learning_models/stable_diffusion/SD_1_5
-    checkpoints: |
-        STABLE_DIFFUSION
-        CHECKPOINTS
-    configs:  |
-        STABLE_DIFFUSION
-        CHECKPOINTS
-    vae: VAE
-    loras: |
-         LORA
-         LYCORIS
-    upscale_models: |
-         ESRGAN
-         REAL_ESRGAN
-         SWINIR
-    embeddings: |
-        EMBEDDINGS
-        TEXTUAL_INVERSION
-    hypernetworks: HYPERNETWORKS
-    controlnet: CONTROL_NET
-sdxl_1_0:
-    base_path: /comfyui-container/machine_learning_models/stable_diffusion/SDXL_1_0
-    checkpoints: |
-        STABLE_DIFFUSION
-        CHECKPOINTS
-    configs:  |
-        STABLE_DIFFUSION
-        CHECKPOINTS
-    vae: VAE
-    loras: |
-         LORA
-         LYCORIS
-    upscale_models: |
-         ESRGAN
-         REAL_ESRGAN
-         SWINIR
-    embeddings: |
-        EMBEDDINGS
-        TEXTUAL_INVERSION
-    hypernetworks: HYPERNETWORKS
-    controlnet: CONTROL_NET
-sdxl_pony:
-    base_path: /comfyui-container/machine_learning_models/stable_diffusion/SDXL_PONY
+sd:
+    base_path: /comfyui-container/machine_learning_models/stable_diffusion
     checkpoints: |
         STABLE_DIFFUSION
         CHECKPOINTS
