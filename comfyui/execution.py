@@ -47,7 +47,8 @@ class IsChangedCache:
             self.is_changed[node_id] = node["is_changed"]
             return self.is_changed[node_id]
 
-        input_data_all, _ = get_input_data(node["inputs"], class_def, node_id, self.outputs_cache)
+        # Intentionally do not use cached outputs here. We only want constants in IS_CHANGED
+        input_data_all, _ = get_input_data(node["inputs"], class_def, node_id, None)
         try:
             is_changed = _map_node_over_list(class_def, input_data_all, "IS_CHANGED")
             node["is_changed"] = [None if isinstance(x, ExecutionBlocker) else x for x in is_changed]
@@ -178,7 +179,13 @@ def merge_result_data(results, obj):
     # merge node execution results
     for i, is_list in zip(range(len(results[0])), output_is_list):
         if is_list:
-            output.append([x for o in results for x in o[i]])
+            value = []
+            for o in results:
+                if isinstance(o[i], ExecutionBlocker):
+                    value.append(o[i])
+                else:
+                    value.extend(o[i])
+            output.append(value)
         else:
             output.append([o[i] for o in results])
     return output
@@ -449,7 +456,7 @@ class PromptExecutor:
                 "current_outputs": list(current_outputs),
             }
             self.add_message("execution_error", mes, broadcast=False)
-        
+
     def execute(self, prompt, prompt_id, extra_data={}, execute_outputs=[]):
         nodes.interrupt_processing(False)
 
@@ -491,6 +498,7 @@ class PromptExecutor:
                     break
 
                 result, error, ex = execute(self.server, dynamic_prompt, self.caches, node_id, extra_data, executed, prompt_id, execution_list, pending_subgraph_results)
+                self.success = result != ExecutionResult.FAILURE
                 if result == ExecutionResult.FAILURE:
                     self.handle_execution_error(prompt_id, dynamic_prompt.original_prompt, current_outputs, executed, error, ex)
                     break

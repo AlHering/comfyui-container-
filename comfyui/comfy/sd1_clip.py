@@ -75,16 +75,15 @@ class ClipTokenWeightEncoder:
         return r
 
 class SDClipModel(torch.nn.Module, ClipTokenWeightEncoder):
-    """Uses the CLIP transformer encoder for text (from huggingface)"""
     LAYERS = [
         "last",
         "pooled",
         "hidden"
     ]
-    def __init__(self, version="openai/clip-vit-large-patch14", device="cpu", max_length=77,
+    def __init__(self, device="cpu", max_length=77,
                  freeze=True, layer="last", layer_idx=None, textmodel_json_config=None, dtype=None, model_class=comfy.clip_model.CLIPTextModel,
                  special_tokens={"start": 49406, "end": 49407, "pad": 49407}, layer_norm_hidden_state=True, enable_attention_masks=False, zero_out_masked=False,
-                 return_projected_pooled=True, return_attention_masks=False):  # clip-vit-base-patch32
+                 return_projected_pooled=True, return_attention_masks=False, model_options={}):  # clip-vit-base-patch32
         super().__init__()
         assert layer in self.LAYERS
 
@@ -94,8 +93,21 @@ class SDClipModel(torch.nn.Module, ClipTokenWeightEncoder):
         with open(textmodel_json_config) as f:
             config = json.load(f)
 
-        self.operations = comfy.ops.manual_cast
+        operations = model_options.get("custom_operations", None)
+        scaled_fp8 = None
+
+        if operations is None:
+            scaled_fp8 = model_options.get("scaled_fp8", None)
+            if scaled_fp8 is not None:
+                operations = comfy.ops.scaled_fp8_ops(fp8_matrix_mult=False, override_dtype=scaled_fp8)
+            else:
+                operations = comfy.ops.manual_cast
+
+        self.operations = operations
         self.transformer = model_class(config, dtype, device, self.operations)
+        if scaled_fp8 is not None:
+            self.transformer.scaled_fp8 = torch.nn.Parameter(torch.tensor([], dtype=scaled_fp8))
+
         self.num_layers = self.transformer.num_layers
 
         self.max_length = max_length
@@ -539,6 +551,7 @@ class SD1Tokenizer:
     def __init__(self, embedding_directory=None, tokenizer_data={}, clip_name="l", tokenizer=SDTokenizer):
         self.clip_name = clip_name
         self.clip = "clip_{}".format(self.clip_name)
+        tokenizer = tokenizer_data.get("{}_tokenizer_class".format(self.clip), tokenizer)
         setattr(self, self.clip, tokenizer(embedding_directory=embedding_directory, tokenizer_data=tokenizer_data))
 
     def tokenize_with_weights(self, text:str, return_word_ids=False):
@@ -552,8 +565,12 @@ class SD1Tokenizer:
     def state_dict(self):
         return {}
 
+class SD1CheckpointClipModel(SDClipModel):
+    def __init__(self, device="cpu", dtype=None, model_options={}):
+        super().__init__(device=device, return_projected_pooled=False, dtype=dtype, model_options=model_options)
+
 class SD1ClipModel(torch.nn.Module):
-    def __init__(self, device="cpu", dtype=None, clip_name="l", clip_model=SDClipModel, name=None, **kwargs):
+    def __init__(self, device="cpu", dtype=None, model_options={}, clip_name="l", clip_model=SD1CheckpointClipModel, name=None, **kwargs):
         super().__init__()
 
         if name is not None:
@@ -563,7 +580,8 @@ class SD1ClipModel(torch.nn.Module):
             self.clip_name = clip_name
             self.clip = "clip_{}".format(self.clip_name)
 
-        setattr(self, self.clip, clip_model(device=device, dtype=dtype, **kwargs))
+        clip_model = model_options.get("{}_class".format(self.clip), clip_model)
+        setattr(self, self.clip, clip_model(device=device, dtype=dtype, model_options=model_options, **kwargs))
 
         self.dtypes = set()
         if dtype is not None:

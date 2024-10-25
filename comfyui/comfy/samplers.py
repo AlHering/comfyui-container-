@@ -6,7 +6,7 @@ from comfy import model_management
 import math
 import logging
 import comfy.sampler_helpers
-import scipy
+import scipy.stats
 import numpy
 
 def get_area_and_mult(conds, x_in, timestep_in):
@@ -358,8 +358,11 @@ def beta_scheduler(model_sampling, steps, alpha=0.6, beta=0.6):
     ts = numpy.rint(scipy.stats.beta.ppf(ts, alpha, beta) * total_timesteps)
 
     sigs = []
+    last_t = -1
     for t in ts:
-        sigs += [float(model_sampling.sigmas[int(t)])]
+        if t != last_t:
+            sigs += [float(model_sampling.sigmas[int(t)])]
+        last_t = t
     sigs += [0.0]
     return torch.FloatTensor(sigs)
 
@@ -570,8 +573,8 @@ class Sampler:
         return math.isclose(max_sigma, sigma, rel_tol=1e-05) or sigma > max_sigma
 
 KSAMPLER_NAMES = ["euler", "euler_cfg_pp", "euler_ancestral", "euler_ancestral_cfg_pp", "heun", "heunpp2","dpm_2", "dpm_2_ancestral",
-                  "lms", "dpm_fast", "dpm_adaptive", "dpmpp_2s_ancestral", "dpmpp_sde", "dpmpp_sde_gpu",
-                  "dpmpp_2m", "dpmpp_2m_sde", "dpmpp_2m_sde_gpu", "dpmpp_3m_sde", "dpmpp_3m_sde_gpu", "ddpm", "lcm",
+                  "lms", "dpm_fast", "dpm_adaptive", "dpmpp_2s_ancestral", "dpmpp_2s_ancestral_cfg_pp", "dpmpp_sde", "dpmpp_sde_gpu",
+                  "dpmpp_2m", "dpmpp_2m_cfg_pp", "dpmpp_2m_sde", "dpmpp_2m_sde_gpu", "dpmpp_3m_sde", "dpmpp_3m_sde_gpu", "ddpm", "lcm",
                   "ipndm", "ipndm_v", "deis"]
 
 class KSAMPLER(Sampler):
