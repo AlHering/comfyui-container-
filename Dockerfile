@@ -3,15 +3,15 @@ ENV PYTHONUNBUFFERED 1
 
 # Setting up basic repo 
 ARG DEBIAN_FRONTEND=noninteractive
-ENV NVIDIA_VISIBLE_DEVICES all
-ENV NVIDIA_DRIVER_CAPABILITIES compute,utility
+ENV NVIDIA_VISIBLE_DEVICES=all
+ENV NVIDIA_DRIVER_CAPABILITIES=compute,utility
 ENV TZ=Europe/Berlin
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
 # Setting up working directory
 ADD ./ comfyui-container/
 WORKDIR /comfyui-container
-ENV RUNNING_IN_DOCKER True
+ENV RUNNING_IN_DOCKER=True
 COPY . .
 
 # Install prerequisits
