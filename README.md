@@ -6,7 +6,7 @@
 ## Used Repositories/Code
 | Name         | Link     | commit |
 |--------------|-----------|------------|
-| comfyanonymous' ComfyUI WebUI |  https://github.com/comfyanonymous/ComfyUI    |   1c08bf3    |
+| comfyanonymous' ComfyUI WebUI |  https://github.com/comfyanonymous/ComfyUI    |   8ce2a10    |
 
 ## Installation
 ### 1. Install Docker
@@ -50,7 +50,7 @@ The first file is used for importing the models from `/comfyui-container/machine
 
 ### 4. Build a Docker image from the repository
 ```sh
-docker build -t comfyui-container:v1.4.2 <path to repo folder>
+docker build -t comfyui-container:v1.5.0 <path to repo folder>
 ```
 ### 5. Start a container based off of the image
 ```sh
@@ -59,7 +59,7 @@ docker run  \
     --mount type=bind,source=<my model folder>,target=/comfyui-container/machine_learning_models \
     --mount type=bind,source=<my output folder>,target=/comfyui-container/stable_diffusion_output \
     --mount type=bind,source=<my prompt template folder>,target=/comfyui-container/stable_diffusion_prompts \
-    "comfyui-container:v1.4.2"
+    "comfyui-container:v1.5.0"
 ```
 
 Note, that mounting the folders is optional but strongly advised for sharing important and potentially large files between multiple projects and docker containers.
@@ -72,7 +72,7 @@ If you exit the container and it is stopped, you can use
 ```sh
 docker ps --all
 ```
-to retrieve the name of the `comfyui-container:v1.4.2` container and rerun and interactively enter it with
+to retrieve the name of the `comfyui-container:v1.5.0` container and rerun and interactively enter it with
 ```sh
 docker restart <container name> &&  nvidia-docker exec -it <container name> /bin/bash
 ```
